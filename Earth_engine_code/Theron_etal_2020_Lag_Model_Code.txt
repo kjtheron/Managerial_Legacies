@@ -1,0 +1,216 @@
+// Link to Code Editor https://code.earthengine.google.com/f6a47fd1547b04646fb8c5b64cad7b62?noload=true
+// Ingest GPS sampling locations into Earth Engine as an asset before running this code.
+// Code consists of two parts. 
+// Part one creates NDVI and NBR time series. 
+// Part two create Terraclimate time series.
+
+
+// Part one
+// Sensor harmonization coefficients
+var coefficients = {
+  itcps: ee.Image.constant([0.0003, 0.0088, 0.0061, 0.0412, 0.0254, 0.0172])
+             .multiply(10000),
+  slopes: ee.Image.constant([0.8474, 0.8483, 0.9047, 0.8462, 0.8937, 0.9071])
+};
+// Define function to get and rename bands of interest from OLI
+function renameOLI(img) {
+  return img.select(
+		['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'pixel_qa'],
+		['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']
+	);
+}
+// Define function to get and rename bands of interest from ETM+
+function renameETM(img) {
+  return img.select(
+		['B1', 'B2', 'B3', 'B4', 'B5', 'B7', 'pixel_qa'],
+		['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']
+  );
+}
+// Apply coefficients
+function etmToOli(img) {
+  return img.select(['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2'])
+    .multiply(coefficients.slopes)
+    .add(coefficients.itcps)
+    .round()
+    .toShort()
+    .addBands(img.select('pixel_qa')
+    .copyProperties(img, ['system:time_start'])
+  );
+}
+// Define function to prepare OLI images
+function prepOli(img) {
+  var orig = img;
+  img = renameOLI(img);
+  return ee.Image(img.copyProperties(orig, orig.propertyNames()));
+}
+// Define function to prepare ETM+ images
+function prepEtm(img) {
+  var orig = img;
+  img = renameETM(img);
+  img = etmToOli(img);
+  return ee.Image(img.copyProperties(orig, orig.propertyNames()));
+}
+// Load image collections
+var Lansat8 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+    .filterBounds(GPS)
+    .filterDate('1980-01-01', '2020-03-31')
+    .map(prepOli);
+var Lansat7 = ee.ImageCollection('LANDSAT/LE07/C01/T1_SR')
+    .filterBounds(GPS)
+    .filterDate('1980-01-01', '2020-03-31')
+    .map(prepEtm);
+var Lansat5 = ee.ImageCollection('LANDSAT/LT05/C01/T1_SR')
+    .filterBounds(GPS)
+    .filterDate('1980-01-01', '2020-03-31')
+    .map(prepEtm);
+// Merge the collections
+var imagery = Lansat5.merge(Lansat7).merge(Lansat8).sort('system:time_start');
+// Function to calculate NDVI and add as a band
+var addNDVI = function(img) {
+  return img.addBands(img.expression(
+    '(NIR - RED) / (NIR + RED)', {
+      'NIR': img.select('NIR'),
+      'RED': img.select('Red')
+}).rename('NDVI'))};
+// Function to calculate NBR and add as a band
+var addNBR = function(img) {
+  return img.addBands(img.expression(
+    '(NIR - SWIR2) / (NIR + SWIR2)', {
+      'NIR': img.select('NIR'),
+      'SWIR2': img.select('SWIR2')
+}).rename('NBR'));};
+// Add variables to image collection
+var imageryVar = imagery
+  .map(addNDVI)
+  .map(addNBR)
+  .sort('system:time_start');
+print("Imagery",imageryVar);
+// Create buffers
+var buf = GPS.map(function(f) {
+  return f.buffer(50,5);
+});
+// Export NDVI table
+var tripletsNDVI = imageryVar.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 30
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+// Format a table of triplets into a 2D table of rowId x colId.
+var format = function(table, rowId, colId) {
+  var rows = table.distinct(rowId);
+  var joined = ee.Join.saveAll('matches').apply({
+    primary: rows, 
+    secondary: table, 
+    condition: ee.Filter.equals({
+      leftField: rowId, 
+      rightField: rowId
+    })
+  });
+  return joined.map(function(row) {
+      var values = ee.List(row.get('matches')).map(function(feature) {
+          feature = ee.Feature(feature);
+          return [feature.get(colId), feature.get('mean')];
+        });
+      return row.select([rowId]).set(ee.Dictionary(values.flatten()));
+    });
+};
+var table1 = format(tripletsNDVI, 'Site_ID', 'imageId');
+var desc1 = 'Landsat_SR_NDVI'; 
+Export.table.toDrive({
+  collection: table1, 
+  description: desc1, 
+  fileNamePrefix: desc1,
+  fileFormat: 'CSV'
+});
+// Export NBR table
+var tripletsNBR = imageryVar.map(function(image) {
+  return image.select('NBR').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 30
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table2 = format(tripletsNBR, 'Site_ID', 'imageId');
+var desc2 = 'Landsat_SR_NBR'; 
+Export.table.toDrive({
+  collection: table2, 
+  description: desc2, 
+  fileNamePrefix: desc2,
+  fileFormat: 'CSV'
+});
+
+
+// Part two
+// Load TerraClimate data
+var climate = ee.ImageCollection('IDAHO_EPSCOR/TERRACLIMATE').filter(ee.Filter.date('1980-01-01', '2020-03-31')); 
+// Clip imagery to ROI
+var climateClip = climate.map(function(image){return image.clip(GPS)});
+// Create variables
+var tmmn = climateClip.select('tmmn');
+var pr = climateClip.select('pr');
+var rad = climateClip.select('srad');
+// Export tmmn
+var tripletstmmn = tmmn.map(function(image) {
+  return image.reduceRegions({              
+    collection: GPS.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(),
+    scale: 4000
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table3 = format(tripletstmmn, 'Site_ID', 'imageId');
+var desc3 = 'Terra_tmmn'; 
+Export.table.toDrive({
+  collection: table3, 
+  description: desc3, 
+  fileNamePrefix: desc3,
+  fileFormat: 'CSV'
+});
+// Export pr
+var tripletspr = pr.map(function(image) {
+  return image.reduceRegions({              
+    collection: GPS.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(),
+    scale: 4000
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table4 = format(tripletspr, 'Site_ID', 'imageId');
+var desc4 = 'Terra_pr'; 
+Export.table.toDrive({
+  collection: table4, 
+  description: desc4, 
+  fileNamePrefix: desc4,
+  fileFormat: 'CSV'
+});
+// Export rad
+var tripletsrad = rad.map(function(image) {
+  return image.reduceRegions({              
+    collection: GPS.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(),
+    scale: 4000
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table5 = format(tripletsrad, 'Site_ID', 'imageId');
+var desc5 = 'Terra_rad'; 
+Export.table.toDrive({
+  collection: table5, 
+  description: desc5, 
+  fileNamePrefix: desc5,
+  fileFormat: 'CSV'
+});
