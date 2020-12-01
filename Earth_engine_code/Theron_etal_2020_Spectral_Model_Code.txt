@@ -1,0 +1,237 @@
+// Link to Code Editor https://code.earthengine.google.com/fd17bf0fdb7fcef987c291323e4234ee?noload=true
+// Ingest GPS sampling locations into Earth Engine as an asset before running this code.
+
+// Landsat 8 band rename.
+function renameLand8(img) {
+  return img.select(
+		['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'pixel_qa'],
+		['Blue', 'Green', 'Red', 'NIR', 'SWIR1', 'SWIR2', 'pixel_qa']
+	);
+}
+// Sentinel 2 band rename.
+function renameSent2(img) {
+  return img.select(
+		['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B11','B12','QA60'],
+		['Blue', 'Green', 'Red', 'RE1', 'RE2', 'RE3', 'NIR', 'RE4', 'SWIR1', 'SWIR2','QA60']
+  );
+}
+// Landsat 8 clound mask
+function fmaskLand8(img) {
+  var cloudShadowBitMask = 1 << 3;
+  var cloudsBitMask = 1 << 5;
+  var qa = img.select('pixel_qa');
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+    .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return img.updateMask(mask);
+}
+// Sentinal 2 clound mask
+function fmaskSent2(image) {
+  var qa = image.select('QA60');
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0).and(
+             qa.bitwiseAnd(cirrusBitMask).eq(0));
+  return image.updateMask(mask);
+}
+// Prepare Landsat
+function prepLandsat(img) {
+  var orig = img;
+  img = renameLand8(img);
+  img = fmaskLand8(img);
+  return ee.Image(img.copyProperties(orig, orig.propertyNames()));
+}
+// Prepare Sentinel
+function prepSentinel(img) {
+  var orig = img;
+  img = renameSent2(img);
+  img = fmaskSent2(img);
+  return ee.Image(img.copyProperties(orig, orig.propertyNames()));
+}
+// Function to calculate NDVI and add as a band
+var addNDVI = function(img) {
+  return img.addBands(img.expression(
+    '(NIR - RED) / (NIR + RED)', {
+      'NIR': img.select('NIR'),
+      'RED': img.select('Red')
+}).rename('NDVI'))};
+// Load Landsat 8 images
+var Landsat20200307 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+  .filterBounds(GPS)
+  .filterDate('2020-03-01', '2020-03-08')
+  .map(prepLandsat)
+  .map(addNDVI)
+  .sort('system:time_start');
+var Landsat20200307 = ee.ImageCollection(Landsat20200307.median());
+var Landsat20200103 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+  .filterBounds(GPS)
+  .filterDate('2020-01-01', '2020-01-04')
+  .map(prepLandsat)
+  .map(addNDVI)
+  .sort('system:time_start');
+var Landsat20200103 = ee.ImageCollection(Landsat20200103.median());
+var Landsat20190524 = ee.ImageCollection('LANDSAT/LC08/C01/T1_SR')
+  .filterBounds(GPS)
+  .filterDate('2019-05-20', '2019-05-30')
+  .map(prepLandsat)
+  .map(addNDVI)
+  .sort('system:time_start');
+var Landsat20190524 = ee.ImageCollection(Landsat20190524.median());
+// Load Sentinal 2 images
+var Sentinel20200304 = ee.ImageCollection('COPERNICUS/S2_SR')
+  .filterBounds(GPS)
+  .filterDate('2020-03-01', '2020-03-09')
+  .map(prepSentinel)
+  .map(addNDVI)
+  .sort('system:time_start');
+var Sentinel20200304 = ee.ImageCollection(Sentinel20200304.median());
+var Sentinel20200104 = ee.ImageCollection('COPERNICUS/S2_SR')
+  .filterBounds(GPS)
+  .filterDate('2020-01-01', '2020-01-05')
+  .map(prepSentinel)
+  .map(addNDVI)
+  .sort('system:time_start');
+var Sentinel20200104 = ee.ImageCollection(Sentinel20200104.median());
+var Sentinel20190524 = ee.ImageCollection('COPERNICUS/S2_SR')
+  .filterBounds(GPS)
+  .filterDate('2019-05-23', '2019-05-25')
+  .map(prepSentinel)
+  .map(addNDVI)
+  .sort('system:time_start');
+var Sentinel20190524 = ee.ImageCollection(Sentinel20190524.median());
+// Create buffers
+var buf = GPS.map(function(f) {
+  return f.buffer(50,5);
+});
+// Export Landsat 07Mar2020 over ROI
+var tripletsLanMar = Landsat20200307.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 30
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+// Format a table of triplets into a 2D table of rowId x colId.
+var format = function(table, rowId, colId) {
+  var rows = table.distinct(rowId);
+  var joined = ee.Join.saveAll('matches').apply({
+    primary: rows, 
+    secondary: table, 
+    condition: ee.Filter.equals({
+      leftField: rowId, 
+      rightField: rowId
+    })
+  });
+  return joined.map(function(row) {
+      var values = ee.List(row.get('matches')).map(function(feature) {
+          feature = ee.Feature(feature);
+          return [feature.get(colId), feature.get('mean')];
+        });
+      return row.select([rowId]).set(ee.Dictionary(values.flatten()));
+    });
+};
+var table1 = format(tripletsLanMar, 'Site_ID', 'imageId');
+var desc1 = 'Landsat_NDVI_20200307'; 
+Export.table.toDrive({
+  collection: table1, 
+  description: desc1, 
+  fileNamePrefix: desc1,
+  fileFormat: 'CSV'
+});
+// Export Landsat 03Jan2020 over ROI
+var tripletsLanJan = Landsat20200103.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 30
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table2 = format(tripletsLanJan, 'Site_ID', 'imageId');
+var desc2 = 'Landsat_NDVI_20200103'; 
+Export.table.toDrive({
+  collection: table2, 
+  description: desc2, 
+  fileNamePrefix: desc2,
+  fileFormat: 'CSV'
+});
+// Export Landsat 24May2019 over ROI
+var tripletsLanMay = Landsat20190524.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 30
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table3 = format(tripletsLanMay, 'Site_ID', 'imageId');
+var desc3 = 'Landsat_NDVI_20190524'; 
+Export.table.toDrive({
+  collection: table3, 
+  description: desc3, 
+  fileNamePrefix: desc3,
+  fileFormat: 'CSV'
+});
+// Export Sentinel 04Mar2020 over ROI
+var tripletsSenMar = Sentinel20200304.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 10
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table4 = format(tripletsSenMar, 'Site_ID', 'imageId');
+var desc4 = 'Sentinel_NDVI_20200304'; 
+Export.table.toDrive({
+  collection: table4, 
+  description: desc4, 
+  fileNamePrefix: desc4,
+  fileFormat: 'CSV'
+});
+// Export Sentinel 04Jan2020 over ROI
+var tripletsSenJan = Sentinel20200104.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 10
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table5 = format(tripletsSenJan, 'Site_ID', 'imageId');
+var desc5 = 'Sentinel_NDVI_20200104'; 
+Export.table.toDrive({
+  collection: table5, 
+  description: desc5, 
+  fileNamePrefix: desc5,
+  fileFormat: 'CSV'
+});
+// Export Sentinel 25May2019 over ROI
+var tripletsSenMay = Sentinel20190524.map(function(image) {
+  return image.select('NDVI').reduceRegions({
+    collection: buf.select(['Site_ID']), 
+    reducer: ee.Reducer.mean(), 
+    scale: 10
+  }).filter(ee.Filter.neq('mean', null))
+    .map(function(f) { 
+      return f.set('imageId', image.id());
+    });
+}).flatten();
+var table6 = format(tripletsSenMay, 'Site_ID', 'imageId');
+var desc6 = 'Sentinel_NDVI_20190524'; 
+Export.table.toDrive({
+  collection: table6, 
+  description: desc6, 
+  fileNamePrefix: desc6,
+  fileFormat: 'CSV'
+});
