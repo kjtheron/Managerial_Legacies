@@ -32,7 +32,7 @@ library(spatialEco)
 library(exactextractr)
 
 #Set working directory
-setwd("D:/")
+setwd("")
 
 ########### Calculating response variables ###########
 #Load community matrix
@@ -358,7 +358,7 @@ rm(Site_00,Site_01,Site_02,Site_03,Site_04,Site_05,Site_06,Site_07,Site_08,
    Site_45,Site_46,Site_47,Site_48,Site_49,Site_50,ColNames,RowNames,Index,
    IndexT,KalmarDataNBR)
 
-#Load and prepare Terraclimate varaibles
+#Load and prepare Terraclimate variables
 #Min Temperature
 Terra_tmmn<- read.csv("Excel_sheets/Terra_tmmn.csv")
 rownames(Terra_tmmn)<-Terra_tmmn$Site_ID
@@ -377,21 +377,12 @@ Terra_pr$Site_ID=NULL
 colnames(Terra_pr) <- str_sub((colnames(Terra_pr)),2,7)
 Terra_pr<-Terra_pr[order(rownames(Terra_pr)),]
 Terra_pr<-Terra_pr[ , order(names(Terra_pr))]
-# Solar Radiation
-Terra_rad<- read.csv("Excel_sheets/Terra_rad.csv")
-rownames(Terra_rad)<-Terra_rad$Site_ID
-Terra_rad$system.index=NULL
-Terra_rad$.geo=NULL
-Terra_rad$Site_ID=NULL
-colnames(Terra_rad) <- str_sub((colnames(Terra_rad)),2,7)
-Terra_rad<-Terra_rad[order(rownames(Terra_rad)),]
-Terra_rad<-Terra_rad[ , order(names(Terra_rad))]
 
 ########### Lag models ###########
-#Standerdise
+#Standardise
 df_stand<-standardize(df[,5:31])
 df_stand<-as.data.frame(cbind("Long_X"=df$Long_X,"Lat_Y"=df$Lat_Y,"Plantation"=df$Plantation,df_stand))
-#Prepair data for looping models and create empty varibles
+#Prepare data for looping models and create empty variables
 number=1
 #Response
 out_start=4
@@ -504,7 +495,7 @@ qqline(resid(model1))
 #Plotting standerdise residuals
 S_Residuals<-simulateResiduals(fittedModel=model1)
 plot(S_Residuals)
-#Despersion testing
+#Dispersion testing
 testDispersion(S_Residuals)
 #Visualize
 ggplot(data=df,aes(x=NDVI_sdY19_20,y=Richness))+
@@ -525,7 +516,7 @@ qqline(resid(model2))
 #Plotting standerdise residuals
 S_Residuals<-simulateResiduals(fittedModel=model2)
 plot(S_Residuals)
-#Despersion testing
+#Dispersion testing
 testDispersion(S_Residuals)
 #Visualize
 ggplot(data=df, aes(x =NDVI_sdY19_20, y = exShannon)) +
@@ -546,7 +537,7 @@ qqline(resid(model3))
 #Plotting standerdise residuals
 S_Residuals<-simulateResiduals(fittedModel=model3)
 plot(S_Residuals)
-#Despersion testing
+#Dispersion testing
 testDispersion(S_Residuals)
 #Visualize
 ggplot(data=df, aes(x =NDVI_sdY17_20, y = exShannon)) +
@@ -568,8 +559,24 @@ NDVI17_20<-NDVI %>% dplyr::select(starts_with(c("201704","201705","201706","2017
 NBR17_20<-NBR %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
 Terra_tmmn17_20<-Terra_tmmn %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
 Terra_pr17_20<-Terra_pr %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
-Terra_rad17_20<-Terra_rad %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
-#Perform PCA to reduce dimentionality
+
+#Load vegetation data
+veg<-read.csv("Excel_sheets/Vegetation_Plot_Data.csv")
+veg[veg==0]<-NA
+veg_Func_Rich<-veg%>%dplyr::select(ends_with(c("Rich")))
+veg_Func_Rich$Bram_Rich=NULL
+veg_Func_Rich[is.na(veg_Func_Rich)]<-NA
+veg_Func_Rich<-as.data.frame(cbind(veg%>%dplyr::select(starts_with(c("Site_ID"))),veg_Func_Rich))
+veg_Func_Rich<-veg_Func_Rich %>% 
+  group_by(Site_ID) %>% 
+  summarise_each(funs(mean(.,na.rm=TRUE)))
+veg_Func_Rich[is.na(veg_Func_Rich)]<-0
+veg_Func_Rich$Site_ID=NULL
+veg_Func_Rich<-as.matrix(veg_Func_Rich)
+#Check for correlations
+chart.Correlation(veg_Func_Rich, TRUE)
+
+#Perform PCA to reduce dimensionality
 #NDVI
 NDVI.pca <- prcomp(scale(t(NDVI17_20)),center = TRUE)
 summary(NDVI.pca)
@@ -586,44 +593,42 @@ Terra_tmmn.pca<-Terra_tmmn.pca$rotation[,1]
 Terra_pr.pca <- prcomp(scale(t(Terra_pr17_20)),center = TRUE)
 summary(Terra_pr.pca)
 Terra_pr.pca<-Terra_pr.pca$rotation[,1]
-#Solar radiation
-Terra_rad.pca <- prcomp(scale(t(Terra_rad17_20)),center = TRUE)
-summary(Terra_rad.pca)
-Terra_rad.pca<-Terra_rad.pca$rotation[,1]
+
 #Variation partitioning
-mod<-varpart(NDVI.pca, NBR.pca, Terra_tmmn.pca, Terra_pr.pca, Terra_rad.pca)
+mod<-varpart(NDVI.pca,NBR.pca,Terra_tmmn.pca,Terra_pr.pca,veg_Func_Rich)
 mod
-plot(mod,Xnames = c("NBR","Temp","Precip","Sol Rad"),
+plot(mod,Xnames = c("NBR","Temp","Precip","Veg"),
      bg = c(2,4,5,3))
 
 #Test significance
 #All variables
-TestAll<-rda(NDVI.pca~NBR.pca+Terra_tmmn.pca+Terra_pr.pca+Terra_rad.pca)
+TestAll<-rda(NDVI.pca~NBR.pca+Terra_tmmn.pca+Terra_pr.pca+veg_Func_Rich)
 anova(TestAll)
 RsquareAdj(TestAll)
 #NBR
 TestNBR.pca<-rda(NDVI.pca~NBR.pca)
 anova(TestNBR.pca)
-RsquareAdj(TestNBR.pca)             
+RsquareAdj(TestNBR.pca)
 #Min Temp
 TestTerra_tmmn.pca<-rda(NDVI.pca~Terra_tmmn.pca)
 anova(TestTerra_tmmn.pca)
-RsquareAdj(TestTerra_tmmn.pca)             
+RsquareAdj(TestTerra_tmmn.pca)
 #Precipitation
 TestTerra_pr.pca<-rda(NDVI.pca~Terra_pr.pca)
 anova(TestTerra_pr.pca)
-RsquareAdj(TestTerra_pr.pca)             
-#Solar radiation
-TestTerra_rad.pca<-rda(NDVI.pca~Terra_rad.pca)
-anova(TestTerra_rad.pca)
-RsquareAdj(TestTerra_rad.pca)             
+RsquareAdj(TestTerra_pr.pca)
+#Vegetation
+Testveg_Func_Rich<-rda(NDVI.pca~veg_Func_Rich)
+anova(Testveg_Func_Rich)
+RsquareAdj(Testveg_Func_Rich)
+
 #Clean environment
-rm(Terra_pr,Terra_pr.pca,Terra_pr17_20,Terra_tmmn,Terra_tmmn.pca,Terra_rad,Terra_rad.pca,
-   Terra_rad17_20,Terra_tmmn17_20,mod,NBR,NBR.pca,NBR17_20,NDVI,NDVI.pca,NDVI17_20,TestAll,
-   TestTerra_pr.pca,TestTerra_rad.pca,TestTerra_tmmn.pca,TestNBR.pca)
+rm(veg,Terra_pr,Terra_pr.pca,Terra_pr17_20,Terra_tmmn,Terra_tmmn.pca,
+   Terra_tmmn17_20,mod,NBR,NBR.pca,NBR17_20,NDVI,NDVI.pca,NDVI17_20,TestAll,
+   TestTerra_pr.pca,TestTerra_tmmn.pca,TestNBR.pca,veg_Func_Rich,Testveg_Func_Rich)
 
 ########### Spectral models ###########
-#Unfortunatly, PlanetScope imagery or derived products cannot be shared publicly.
+#Unfortunately, PlanetScope imagery or derived products cannot be shared publicly.
 '''
 #Load and extract Planetscope imagery 2019/05
 Estate1_2019_05<-brick("PlanetScope/2019_05/Estate1/20190502_075144_64_105f_3B_AnalyticMS_SR.tif")
@@ -770,7 +775,7 @@ rownames(LandsatNDVI20200307)<-LandsatNDVI20200307$Site_ID
 LandsatNDVI20200307$system.index=NULL
 LandsatNDVI20200307$.geo=NULL
 LandsatNDVI20200307$Site_ID=NULL
-# Construct data frame
+#Construct data frame
 df<-as.data.frame(cbind(df,
                         "Sentinel_NDVI_2019_05"=SentinelNDVI20190524$X0,
                         "Sentinel_NDVI_2020_01"=SentinelNDVI20200104$X0,
@@ -782,10 +787,10 @@ df<-as.data.frame(cbind(df,
 rm(SentinelNDVI20190524,SentinelNDVI20200104,SentinelNDVI20200304,
    LandsatNDVI20190524,LandsatNDVI20200103,LandsatNDVI20200307)
 
-# Standerdise
+#Standerdise
 df_stand<-standardize(df[,5:40])
 df_stand<-as.data.frame(cbind("Long_X"=df$Long_X,"Lat_Y"=df$Lat_Y,"Plantation"=df$Plantation,df_stand[,1:2],df_stand[,28:36]))
-#Prepair data for looping models and create empty varibles
+#Prepare data for looping models and create empty variables
 number=1
 #Response
 out_start=4
@@ -857,7 +862,7 @@ exposure<- read.csv("R_code/Temp/exposure.csv",stringsAsFactors = F)
 outcome<- read.csv("R_code/Temp/outcome.csv",stringsAsFactors = F)
 colnames(exposure)<-c("Explanatory","edf","f_value","p_value","AIC")
 all<- cbind("Response"=outcome$variable,exposure)
-# Find significant results
+#Find significant results
 Significant <- dplyr::filter(all, p_value <=0.05)
 #Clean environment
 rm(all,AIC,exp_AIC,exp_end,exp_f_value,exp_nvar,exp_p_value,exp_start,exp_variable,
@@ -1041,7 +1046,7 @@ Model1_Dredge<-dredge(Model1,evaluate=TRUE,rank=AICc)
 options(na.action = "na.omit")
 Model1_Subset<-subset(Model1_Dredge,delta<2)
 Model1_Ave<-model.avg(Model1_Subset)
-# Reporting
+#Reporting
 importance(Model1_Ave)
 confint(Model1_Ave)
 summary(Model1_Ave)
@@ -1086,7 +1091,7 @@ mvhopper<-mvabund(hopper)
 #Standerdise
 df_stand<-standardize(df[,7:31])
 df_stand<-cbind(df[1:4],df_stand)
-#Prepair data for looping models and create empty varibles
+#Prepare data for looping models and create empty variables
 number=1
 #Explanatory
 exp_start=5
@@ -1153,7 +1158,7 @@ rm(Coefficients,Significant,NDVI_sdY19_20,NDVI_sdY18_20,Corner_NDVI_sdY19_20,Cor
 #Standerdise
 df_stand<-standardize(df[,32:40])
 df_stand<-cbind(df[1:4],df_stand)
-#Prepair data for looping models and create empty varibles
+#Prepare data for looping models and create empty variables
 number=1
 #Explanatory
 exp_start=5
@@ -1191,7 +1196,7 @@ exposure = exposure %>%
     AIC = exp_AIC
   )
 exposure = na.omit(exposure)
-# Find significant results
+#Find significant results
 Significant <- dplyr::filter(exposure, p_value <=0.05)
 #Clean environment
 rm(exposure,model,AIC,exp_AIC,exp_end,exp_score,exp_nvar,Pr,score,exp_pvalue,exp_start,exp_variable,j,number,Multi_stat,anova)
@@ -1219,7 +1224,7 @@ rm(Coefficients,Significant,PlanetScope_NDVI_50_2019_05,Landsat_NDVI_2019_05,Cor
 #Standerdise
 df_stand<-standardize(df[,41:45])
 df_stand<-cbind(df[1:4],df_stand)
-# Creating model
+#Creating model
 model<-manyglm(mvhopper~Plantation+AveVegHei+veg_Mean_Rich+Bram_Abu+Rock_Cov+Grou_Cov,
                family="negative binomial",data=df_stand)
 anova(model,resamp="perm.resid",test="score",cor.type="I")
