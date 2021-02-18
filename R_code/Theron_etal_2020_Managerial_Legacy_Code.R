@@ -1304,6 +1304,7 @@ a<-ggplot(data=df, aes(x =PlanetScope_NDVI_50_2019_05, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
   labs(y="Caelifera species richness\n",x="\nPlanetScope NDVI May 2019")+
+  scale_x_continuous(breaks=scales::pretty_breaks(n=3))+
   theme(axis.title=element_text(size=14),
         axis.text=element_text(size=13,colour="black"),
         axis.ticks=element_line(size=0.8,colour="black"),
@@ -1314,13 +1315,14 @@ b<-ggplot(data=df, aes(x =PlanetScope_NDVI_50_2020_01, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
   labs(y="Caelifera species richness\n",x="\nPlanetScope NDVI January 2020")+
+  scale_x_continuous(breaks=scales::pretty_breaks(n=3))+
   theme(axis.title=element_text(size=14),
         axis.text=element_text(size=13,colour="black"),
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
         panel.background=element_blank())
-c<-ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
+  c<-ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
   labs(y="Caelifera species richness\n",x="\nSentinel NDVI May 2019")+
