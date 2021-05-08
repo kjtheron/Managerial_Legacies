@@ -261,123 +261,6 @@ rm(sdY19_20,sdY18_20,sdY17_20,sdY16_20,sdY15_20,sdY14_20,sdY13_20,sdY12_20,sdY11
    Y09_10,Y08_09,Y07_08,Y06_07,Y05_06,Y04_05,Y03_04,Y02_03,Y01_02,Y00_01,Y95_96,Y98_99,Y99_00,Y96_97,
    Y97_98,KalmarDataNDVI)
 
-#Clean Landsat NBR time series data
-Index<- read.csv("Excel_sheets/Landsat_SR_NBR.csv")
-rownames(Index)<-Index$Site_ID
-#Remove unwanted Columns
-Index$system.index=NULL
-Index$.geo=NULL
-Index$Site_ID=NULL
-#Rename column headers sort matrix
-colnames(Index) <- str_sub((colnames(Index)),-8,-1)
-Index<-Index[order(rownames(Index)),]
-Index<-Index[ , order(names(Index))]
-#Remove multiples by calculating their means
-Index<-sapply(split.default(Index, sub('\\..*', '', names(Index))), rowMeans, na.rm = TRUE)
-#Select imagery from 1995 - 2020
-Index<-Index[,93:1010]
-#Remove outliers
-sum(is.na(Index))
-x <- abs(Index - median(Index,na.rm = T)) / mad(Index,na.rm = T)
-tr <- ifelse(quantile(x,.99,na.rm=T)>2,quantile(x,.99,na.rm=T),NA)
-if(!is.na(tr)){
-  Index[ which(x > tr )] <- NA
-}
-sum(is.na(Index))
-#Clean environment
-rm(x,tr)
-#Impute missing data using Kalman smoother and apply sgolayfilt Savitzky-Golay filtering
-IndexT<-t(Index)
-ColNames<-colnames(IndexT)
-RowNames<-rownames(IndexT)
-Site_00<-sgolayfilt(na_kalman(IndexT[,1],model = "auto.arima"))
-Site_01<-sgolayfilt(na_kalman(IndexT[,2],model = "auto.arima"))
-Site_02<-sgolayfilt(na_kalman(IndexT[,3],model = "auto.arima"))
-Site_03<-sgolayfilt(na_kalman(IndexT[,4],model = "auto.arima"))
-Site_04<-sgolayfilt(na_kalman(IndexT[,5],model = "auto.arima"))
-Site_05<-sgolayfilt(na_kalman(IndexT[,6],model = "auto.arima"))
-Site_06<-sgolayfilt(na_kalman(IndexT[,7],model = "auto.arima"))
-Site_07<-sgolayfilt(na_kalman(IndexT[,8],model = "auto.arima"))
-Site_08<-sgolayfilt(na_kalman(IndexT[,9],model = "auto.arima"))
-Site_09<-sgolayfilt(na_kalman(IndexT[,10],model = "auto.arima"))
-Site_10<-sgolayfilt(na_kalman(IndexT[,11],model = "auto.arima"))
-Site_11<-sgolayfilt(na_kalman(IndexT[,12],model = "auto.arima"))
-Site_12<-sgolayfilt(na_kalman(IndexT[,13],model = "auto.arima"))
-Site_13<-sgolayfilt(na_kalman(IndexT[,14],model = "auto.arima"))
-Site_14<-sgolayfilt(na_kalman(IndexT[,15],model = "auto.arima"))
-Site_15<-sgolayfilt(na_kalman(IndexT[,16],model = "auto.arima"))
-Site_16<-sgolayfilt(na_kalman(IndexT[,17],model = "auto.arima"))
-Site_17<-sgolayfilt(na_kalman(IndexT[,18],model = "auto.arima"))
-Site_18<-sgolayfilt(na_kalman(IndexT[,19],model = "auto.arima"))
-Site_19<-sgolayfilt(na_kalman(IndexT[,20],model = "auto.arima"))
-Site_20<-sgolayfilt(na_kalman(IndexT[,21],model = "auto.arima"))
-Site_21<-sgolayfilt(na_kalman(IndexT[,22],model = "auto.arima"))
-Site_22<-sgolayfilt(na_kalman(IndexT[,23],model = "auto.arima"))
-Site_23<-sgolayfilt(na_kalman(IndexT[,24],model = "auto.arima"))
-Site_24<-sgolayfilt(na_kalman(IndexT[,25],model = "auto.arima"))
-Site_25<-sgolayfilt(na_kalman(IndexT[,26],model = "auto.arima"))
-Site_26<-sgolayfilt(na_kalman(IndexT[,27],model = "auto.arima"))
-Site_27<-sgolayfilt(na_kalman(IndexT[,28],model = "auto.arima"))
-Site_28<-sgolayfilt(na_kalman(IndexT[,29],model = "auto.arima"))
-Site_29<-sgolayfilt(na_kalman(IndexT[,30],model = "auto.arima"))
-Site_30<-sgolayfilt(na_kalman(IndexT[,31],model = "auto.arima"))
-Site_31<-sgolayfilt(na_kalman(IndexT[,32],model = "auto.arima"))
-Site_32<-sgolayfilt(na_kalman(IndexT[,33],model = "auto.arima"))
-Site_33<-sgolayfilt(na_kalman(IndexT[,34],model = "auto.arima"))
-Site_34<-sgolayfilt(na_kalman(IndexT[,35],model = "auto.arima"))
-Site_35<-sgolayfilt(na_kalman(IndexT[,36],model = "auto.arima"))
-Site_36<-sgolayfilt(na_kalman(IndexT[,37],model = "auto.arima"))
-Site_37<-sgolayfilt(na_kalman(IndexT[,38],model = "auto.arima"))
-Site_38<-sgolayfilt(na_kalman(IndexT[,39],model = "auto.arima"))
-Site_39<-sgolayfilt(na_kalman(IndexT[,40],model = "auto.arima"))
-Site_40<-sgolayfilt(na_kalman(IndexT[,41],model = "auto.arima"))
-Site_41<-sgolayfilt(na_kalman(IndexT[,42],model = "auto.arima"))
-Site_42<-sgolayfilt(na_kalman(IndexT[,43],model = "auto.arima"))
-Site_43<-sgolayfilt(na_kalman(IndexT[,44],model = "auto.arima"))
-Site_44<-sgolayfilt(na_kalman(IndexT[,45],model = "auto.arima"))
-Site_45<-sgolayfilt(na_kalman(IndexT[,46],model = "auto.arima"))
-Site_46<-sgolayfilt(na_kalman(IndexT[,47],model = "auto.arima"))
-Site_47<-sgolayfilt(na_kalman(IndexT[,48],model = "auto.arima"))
-Site_48<-sgolayfilt(na_kalman(IndexT[,49],model = "auto.arima"))
-Site_49<-sgolayfilt(na_kalman(IndexT[,50],model = "auto.arima"))
-Site_50<-sgolayfilt(na_kalman(IndexT[,51],model = "auto.arima"))
-KalmarDataNBR<-cbind(Site_00,Site_01,Site_02,Site_03,Site_04,Site_05,Site_06,Site_07,Site_08,
-                     Site_09,Site_10,Site_11,Site_12,Site_13,Site_14,Site_15,Site_16,Site_17,
-                     Site_18,Site_19,Site_20,Site_21,Site_22,Site_23,Site_24,Site_25,Site_26,
-                     Site_27,Site_28,Site_29,Site_30,Site_31,Site_32,Site_33,Site_34,Site_35,
-                     Site_36,Site_37,Site_38,Site_39,Site_40,Site_41,Site_42,Site_43,Site_44,
-                     Site_45,Site_46,Site_47,Site_48,Site_49,Site_50)
-colnames(KalmarDataNBR)<-ColNames
-rownames(KalmarDataNBR)<-RowNames
-NBR<-as.data.frame(t(KalmarDataNBR))
-rm(Site_00,Site_01,Site_02,Site_03,Site_04,Site_05,Site_06,Site_07,Site_08,
-   Site_09,Site_10,Site_11,Site_12,Site_13,Site_14,Site_15,Site_16,Site_17,
-   Site_18,Site_19,Site_20,Site_21,Site_22,Site_23,Site_24,Site_25,Site_26,
-   Site_27,Site_28,Site_29,Site_30,Site_31,Site_32,Site_33,Site_34,Site_35,
-   Site_36,Site_37,Site_38,Site_39,Site_40,Site_41,Site_42,Site_43,Site_44,
-   Site_45,Site_46,Site_47,Site_48,Site_49,Site_50,ColNames,RowNames,Index,
-   IndexT,KalmarDataNBR)
-
-#Load and prepare Terraclimate variables
-#Min Temperature
-Terra_tmmn<- read.csv("Excel_sheets/Terra_tmmn.csv")
-rownames(Terra_tmmn)<-Terra_tmmn$Site_ID
-Terra_tmmn$system.index=NULL
-Terra_tmmn$.geo=NULL
-Terra_tmmn$Site_ID=NULL
-colnames(Terra_tmmn) <- str_sub((colnames(Terra_tmmn)),2,7)
-Terra_tmmn<-Terra_tmmn[order(rownames(Terra_tmmn)),]
-Terra_tmmn<-Terra_tmmn[ , order(names(Terra_tmmn))]
-#Precipitation
-Terra_pr<- read.csv("Excel_sheets/Terra_pr.csv")
-rownames(Terra_pr)<-Terra_pr$Site_ID
-Terra_pr$system.index=NULL
-Terra_pr$.geo=NULL
-Terra_pr$Site_ID=NULL
-colnames(Terra_pr) <- str_sub((colnames(Terra_pr)),2,7)
-Terra_pr<-Terra_pr[order(rownames(Terra_pr)),]
-Terra_pr<-Terra_pr[ , order(names(Terra_pr))]
-
 ########### Lag models ###########
 #Standardise
 df_stand<-standardize(df[,5:31])
@@ -489,6 +372,7 @@ rm(all,exposure,model,outcome,Vcov,AIC, beta,exp_5IntVal,exp_95IntVal,exp_AIC,ex
 #Model 1 validation and plotting
 model1<-lmer(Richness~NDVI_sdY19_20+(1|Plantation),data=df_stand)
 summary(model1)
+r.squaredGLMM(model1)
 plot(model1)
 qqnorm(resid(model1))
 qqline(resid(model1))
@@ -510,6 +394,8 @@ ggplot(data=df,aes(x=NDVI_sdY19_20,y=Richness))+
         panel.background=element_blank())
 #Model 2 validation and plotting
 model2<-lmer(exShannon~NDVI_sdY19_20+(1|Plantation),data=df_stand)
+summary(model2)
+r.squaredGLMM(model2)
 plot(model2)
 qqnorm(resid(model2))
 qqline(resid(model2))
@@ -531,6 +417,8 @@ ggplot(data=df, aes(x =NDVI_sdY19_20, y = exShannon)) +
         panel.background=element_blank())
 #Model 3 validation and plotting
 model3<-lmer(exShannon~NDVI_sdY17_20+(1|Plantation),data=df_stand)
+summary(model3)
+r.squaredGLMM(model3)
 plot(model3)
 qqnorm(resid(model3))
 qqline(resid(model3))
@@ -553,83 +441,10 @@ ggplot(data=df, aes(x =NDVI_sdY17_20, y = exShannon)) +
 #Clean environment
 rm(Significant,S_Residuals,model1,model2,model3)
 
-########### Variation partitioning ###########
-#Select time stamps of significant variation from Q1
-NDVI17_20<-NDVI %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
-NBR17_20<-NBR %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
-Terra_tmmn17_20<-Terra_tmmn %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
-Terra_pr17_20<-Terra_pr %>% dplyr::select(starts_with(c("201704","201705","201706","201707","201708","201709","201710","201711","201712","201801","201802","201803","201804","201805","201806","201807","201808","201809","201810","201811","201812","201901","201902","201903","201904","201905","201906","201907","201908","201909","201910","201911","201912","202001","202002","202003")))
-
-#Load vegetation data
-veg<-read.csv("Excel_sheets/Vegetation_Plot_Data.csv")
-veg[veg==0]<-NA
-veg_Func_Rich<-veg%>%dplyr::select(ends_with(c("Rich")))
-veg_Func_Rich$Bram_Rich=NULL
-veg_Func_Rich[is.na(veg_Func_Rich)]<-NA
-veg_Func_Rich<-as.data.frame(cbind(veg%>%dplyr::select(starts_with(c("Site_ID"))),veg_Func_Rich))
-veg_Func_Rich<-veg_Func_Rich %>% 
-  group_by(Site_ID) %>% 
-  summarise_each(funs(mean(.,na.rm=TRUE)))
-veg_Func_Rich[is.na(veg_Func_Rich)]<-0
-veg_Func_Rich$Site_ID=NULL
-veg_Func_Rich<-as.matrix(veg_Func_Rich)
-#Check for correlations
-chart.Correlation(veg_Func_Rich, TRUE)
-
-#Perform PCA to reduce dimensionality
-#NDVI
-NDVI.pca <- prcomp(scale(t(NDVI17_20)),center = TRUE)
-summary(NDVI.pca)
-NDVI.pca<-NDVI.pca$rotation[,1:2]
-#NBR
-NBR.pca <- prcomp(scale(t(NBR17_20)),center = TRUE)
-summary(NBR.pca)
-NBR.pca<-NBR.pca$rotation[,1:2]
-#Min Temp
-Terra_tmmn.pca <- prcomp(scale(t(Terra_tmmn17_20)),center = TRUE)
-summary(Terra_tmmn.pca)
-Terra_tmmn.pca<-Terra_tmmn.pca$rotation[,1]
-#Precipitation
-Terra_pr.pca <- prcomp(scale(t(Terra_pr17_20)),center = TRUE)
-summary(Terra_pr.pca)
-Terra_pr.pca<-Terra_pr.pca$rotation[,1]
-
-#Variation partitioning
-mod<-varpart(NDVI.pca,NBR.pca,Terra_tmmn.pca,Terra_pr.pca,veg_Func_Rich)
-mod
-plot(mod,Xnames = c("NBR","Temp","Precip","Veg"),
-     bg = c(2,4,5,3))
-
-#Test significance
-#All variables
-TestAll<-rda(NDVI.pca~NBR.pca+Terra_tmmn.pca+Terra_pr.pca+veg_Func_Rich)
-anova(TestAll)
-RsquareAdj(TestAll)
-#NBR
-TestNBR.pca<-rda(NDVI.pca~NBR.pca)
-anova(TestNBR.pca)
-RsquareAdj(TestNBR.pca)
-#Min Temp
-TestTerra_tmmn.pca<-rda(NDVI.pca~Terra_tmmn.pca)
-anova(TestTerra_tmmn.pca)
-RsquareAdj(TestTerra_tmmn.pca)
-#Precipitation
-TestTerra_pr.pca<-rda(NDVI.pca~Terra_pr.pca)
-anova(TestTerra_pr.pca)
-RsquareAdj(TestTerra_pr.pca)
-#Vegetation
-Testveg_Func_Rich<-rda(NDVI.pca~veg_Func_Rich)
-anova(Testveg_Func_Rich)
-RsquareAdj(Testveg_Func_Rich)
-
-#Clean environment
-rm(veg,Terra_pr,Terra_pr.pca,Terra_pr17_20,Terra_tmmn,Terra_tmmn.pca,
-   Terra_tmmn17_20,mod,NBR,NBR.pca,NBR17_20,NDVI,NDVI.pca,NDVI17_20,TestAll,
-   TestTerra_pr.pca,TestTerra_tmmn.pca,TestNBR.pca,veg_Func_Rich,Testveg_Func_Rich)
-
 ########### Spectral models ###########
-#Unfortunately, PlanetScope imagery or derived products cannot be shared publicly.
 '''
+#Unfortunately, PlanetScope imagery or derived products cannot be shared publicly.
+
 #Load and extract Planetscope imagery 2019/05
 Estate1_2019_05<-brick("PlanetScope/2019_05/Estate1/20190502_075144_64_105f_3B_AnalyticMS_SR.tif")
 Estate2_2019_05<-brick("PlanetScope/2019_05/Estate2/20190502_075142_57_105f_3B_AnalyticMS_SR.tif")
@@ -775,7 +590,7 @@ rownames(LandsatNDVI20200307)<-LandsatNDVI20200307$Site_ID
 LandsatNDVI20200307$system.index=NULL
 LandsatNDVI20200307$.geo=NULL
 LandsatNDVI20200307$Site_ID=NULL
-#Construct data frame
+# Construct data frame
 df<-as.data.frame(cbind(df,
                         "Sentinel_NDVI_2019_05"=SentinelNDVI20190524$X0,
                         "Sentinel_NDVI_2020_01"=SentinelNDVI20200104$X0,
@@ -787,7 +602,7 @@ df<-as.data.frame(cbind(df,
 rm(SentinelNDVI20190524,SentinelNDVI20200104,SentinelNDVI20200304,
    LandsatNDVI20190524,LandsatNDVI20200103,LandsatNDVI20200307)
 
-#Standerdise
+# Standerdise
 df_stand<-standardize(df[,5:40])
 df_stand<-as.data.frame(cbind("Long_X"=df$Long_X,"Lat_Y"=df$Lat_Y,"Plantation"=df$Plantation,df_stand[,1:2],df_stand[,28:36]))
 #Prepare data for looping models and create empty variables
@@ -862,7 +677,7 @@ exposure<- read.csv("R_code/Temp/exposure.csv",stringsAsFactors = F)
 outcome<- read.csv("R_code/Temp/outcome.csv",stringsAsFactors = F)
 colnames(exposure)<-c("Explanatory","edf","f_value","p_value","AIC")
 all<- cbind("Response"=outcome$variable,exposure)
-#Find significant results
+# Find significant results
 Significant <- dplyr::filter(all, p_value <=0.05)
 #Clean environment
 rm(all,AIC,exp_AIC,exp_end,exp_f_value,exp_nvar,exp_p_value,exp_start,exp_variable,
@@ -871,6 +686,7 @@ rm(all,AIC,exp_AIC,exp_end,exp_f_value,exp_nvar,exp_p_value,exp_start,exp_variab
 
 #Model 1 validation and plotting
 model1<-gamm4(Richness~t2(PlanetScope_NDVI_50_2019_05,bs="cc",k=4),random=~(1|Plantation),family=gaussian,na.action=na.exclude,data=df_stand)
+summary(model1$gam)
 residuals<-model1[["gam"]][["residuals"]]
 fitted.values<-model1[["gam"]][["fitted.values"]]
 plot(x=fitted.values,y=residuals,xlab="Fitted values",ylab="Residuals")
@@ -888,6 +704,7 @@ ggplot(data=df, aes(x =PlanetScope_NDVI_50_2019_05, y = Richness)) +
         panel.background=element_blank())
 #Model 2 validation and plotting
 model2<-gamm4(Richness~t2(PlanetScope_NDVI_50_2020_01,bs="cc",k=4),random=~(1|Plantation),family=gaussian,na.action=na.exclude,data=df_stand)
+summary(model2$gam)
 residuals<-model2[["gam"]][["residuals"]]
 fitted.values<-model2[["gam"]][["fitted.values"]]
 plot(x=fitted.values,y=residuals,xlab="Fitted values",ylab="Residuals")
@@ -905,6 +722,7 @@ ggplot(data=df, aes(x =PlanetScope_NDVI_50_2020_01, y = Richness)) +
         panel.background=element_blank())
 #Model 3 validation and plotting
 model3<-gamm4(Richness~t2(Sentinel_NDVI_2019_05,bs="cc",k=4),random=~(1|Plantation),family=gaussian,na.action=na.exclude,data=df_stand)
+summary(model3$gam)
 residuals<-model3[["gam"]][["residuals"]]
 fitted.values<-model3[["gam"]][["fitted.values"]]
 plot(x=fitted.values,y=residuals,xlab="Fitted values",ylab="Residuals")
@@ -922,6 +740,7 @@ ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
         panel.background=element_blank())
 #Model 4 validation and plotting
 model4<-gamm4(Richness~t2(Sentinel_NDVI_2020_01,bs="cc",k=4),random=~(1|Plantation),family=gaussian,na.action=na.exclude,data=df_stand)
+summary(model4$gam)
 residuals<-model4[["gam"]][["residuals"]]
 fitted.values<-model4[["gam"]][["fitted.values"]]
 plot(x=fitted.values,y=residuals,xlab="Fitted values",ylab="Residuals")
@@ -939,6 +758,7 @@ ggplot(data=df, aes(x =Sentinel_NDVI_2020_01, y = Richness)) +
         panel.background=element_blank())
 #Model 5 validation and plotting
 model5<-gamm4(Richness~t2(Sentinel_NDVI_2020_03,bs="cc",k=4),random=~(1|Plantation),family=gaussian,na.action=na.exclude,data=df_stand)
+summary(model5$gam)
 residuals<-model5[["gam"]][["residuals"]]
 fitted.values<-model5[["gam"]][["fitted.values"]]
 plot(x=fitted.values,y=residuals,xlab="Fitted values",ylab="Residuals")
@@ -956,6 +776,7 @@ ggplot(data=df, aes(x =Sentinel_NDVI_2020_03, y = Richness)) +
         panel.background=element_blank())
 #Model 6 validation and plotting
 model6<-gamm4(exShannon~t2(Landsat_NDVI_2020_03,bs="cc",k=4),random=~(1|Plantation),family=gaussian,na.action=na.exclude,data=df_stand)
+summary(model6$gam)
 residuals<-model6[["gam"]][["residuals"]]
 fitted.values<-model6[["gam"]][["fitted.values"]]
 plot(x=fitted.values,y=residuals,xlab="Fitted values",ylab="Residuals")
@@ -1137,16 +958,16 @@ rm(exposure,model,AIC,exp_AIC,exp_end,exp_score,exp_nvar,Pr,score,exp_pvalue,exp
 #Perform fourth corner analysis
 Family<-read.csv("Excel_sheets/Caelifera_Families.csv",row.names = 1)
 #Creating individual variables
-NDVI_sdY19_20<-as.data.frame(cbind("Plantation"=df_stand$Plantation,"NDVI 2019-2020"=df_stand$NDVI_sdY19_20))#4x5
+NDVI_sdY19_20<-as.data.frame(cbind("Plantation"=df_stand$Plantation,"NDVI 2019-2020"=df_stand$NDVI_sdY19_20))
 NDVI_sdY18_20<-as.data.frame(cbind("Plantation"=df_stand$Plantation,"NDVI 2018-2020"=df_stand$NDVI_sdY18_20))
 #Running 4th corner
 Corner_NDVI_sdY19_20<-traitglm(hopper,NDVI_sdY19_20,Family,
-                      family="negative.binomial",
-                      method="glm1path")
+                               family="negative.binomial",
+                               method="glm1path")
 NDVI_sdY19_20<-data.matrix(Corner_NDVI_sdY19_20$fourth) 
 Corner_NDVI_sdY18_20<-traitglm(hopper,NDVI_sdY18_20,Family,
-                      family="negative.binomial",
-                      method="glm1path")
+                               family="negative.binomial",
+                               method="glm1path")
 NDVI_sdY18_20<-data.matrix(Corner_NDVI_sdY18_20$fourth) 
 #Creating Coefficient matrix for plotting later
 Coefficients<-as.data.frame(cbind(NDVI_sdY19_20,NDVI_sdY18_20))
@@ -1196,7 +1017,7 @@ exposure = exposure %>%
     AIC = exp_AIC
   )
 exposure = na.omit(exposure)
-#Find significant results
+# Find significant results
 Significant <- dplyr::filter(exposure, p_value <=0.05)
 #Clean environment
 rm(exposure,model,AIC,exp_AIC,exp_end,exp_score,exp_nvar,Pr,score,exp_pvalue,exp_start,exp_variable,j,number,Multi_stat,anova)
@@ -1207,12 +1028,12 @@ PlanetScope_NDVI_50_2019_05<-as.data.frame(cbind("Plantation"=df_stand$Plantatio
 Landsat_NDVI_2019_05<-as.data.frame(cbind("Plantation"=df_stand$Plantation,"Landsat NDVI May 2019"=df_stand$Landsat_NDVI_2019_05))
 #Running 4th corner
 Corner_PlanetScope_NDVI_50_2019_05<-traitglm(hopper,PlanetScope_NDVI_50_2019_05,Family,
-                               family="negative.binomial",
-                               method="glm1path")
+                                             family="negative.binomial",
+                                             method="glm1path")
 PlanetScope_NDVI_50_2019_05<-data.matrix(Corner_PlanetScope_NDVI_50_2019_05$fourth) 
 Corner_Landsat_NDVI_2019_05<-traitglm(hopper,Landsat_NDVI_2019_05,Family,
-                               family="negative.binomial",
-                               method="glm1path")
+                                      family="negative.binomial",
+                                      method="glm1path")
 Landsat_NDVI_2019_05<-data.matrix(Corner_Landsat_NDVI_2019_05$fourth) 
 #Creating Coefficient matrix for plotting later
 Coefficients<-as.data.frame(cbind(PlanetScope_NDVI_50_2019_05,Landsat_NDVI_2019_05))
@@ -1224,7 +1045,7 @@ rm(Coefficients,Significant,PlanetScope_NDVI_50_2019_05,Landsat_NDVI_2019_05,Cor
 #Standerdise
 df_stand<-standardize(df[,41:45])
 df_stand<-cbind(df[1:4],df_stand)
-#Creating model
+# Creating model
 model<-manyglm(mvhopper~Plantation+AveVegHei+veg_Mean_Rich+Bram_Abu+Rock_Cov+Grou_Cov,
                family="negative binomial",data=df_stand)
 anova(model,resamp="perm.resid",test="score",cor.type="I")
@@ -1322,7 +1143,7 @@ b<-ggplot(data=df, aes(x =PlanetScope_NDVI_50_2020_01, y = Richness)) +
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
         panel.background=element_blank())
-  c<-ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
+c<-ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
   labs(y="Caelifera species richness\n",x="\nSentinel NDVI May 2019")+
@@ -1388,7 +1209,7 @@ Coefficients<-as.data.frame(cbind(LagCoefficients,SpectralCoefficients,LocalCoef
 #Plot
 a = max(abs(Coefficients))
 colort = colorRampPalette(c("blue","white","red"))
-pdf("R_code/Temp/pdf/Figure5.pdf")#h6.w5x5
+pdf("R_code/Temp/pdf/Figure5.pdf")
 Figure5<-levelplot(t(as.matrix(Coefficients)), 
                    xlab=list("\nVariables",cex=1),
                    ylab=list("Sub families",cex=1),
