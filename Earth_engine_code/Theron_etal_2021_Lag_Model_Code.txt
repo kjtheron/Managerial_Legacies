@@ -1,11 +1,7 @@
-// Link to Code Editor https://code.earthengine.google.com/f6a47fd1547b04646fb8c5b64cad7b62?noload=true
+// Link to Code Editor https://code.earthengine.google.com/b3019e3874661102fac7d73faf54f229?noload=true
 // Ingest GPS sampling locations into Earth Engine as an asset before running this code.
-// Code consists of two parts. 
-// Part one creates NDVI and NBR time series. 
-// Part two create Terraclimate time series.
 
-
-// Part one
+// Creates NDVI time series.
 // Sensor harmonization coefficients
 var coefficients = {
   itcps: ee.Image.constant([0.0003, 0.0088, 0.0061, 0.0412, 0.0254, 0.0172])
@@ -72,17 +68,9 @@ var addNDVI = function(img) {
       'NIR': img.select('NIR'),
       'RED': img.select('Red')
 }).rename('NDVI'))};
-// Function to calculate NBR and add as a band
-var addNBR = function(img) {
-  return img.addBands(img.expression(
-    '(NIR - SWIR2) / (NIR + SWIR2)', {
-      'NIR': img.select('NIR'),
-      'SWIR2': img.select('SWIR2')
-}).rename('NBR'));};
 // Add variables to image collection
 var imageryVar = imagery
   .map(addNDVI)
-  .map(addNBR)
   .sort('system:time_start');
 print("Imagery",imageryVar);
 // Create buffers
@@ -125,92 +113,5 @@ Export.table.toDrive({
   collection: table1, 
   description: desc1, 
   fileNamePrefix: desc1,
-  fileFormat: 'CSV'
-});
-// Export NBR table
-var tripletsNBR = imageryVar.map(function(image) {
-  return image.select('NBR').reduceRegions({
-    collection: buf.select(['Site_ID']), 
-    reducer: ee.Reducer.mean(), 
-    scale: 30
-  }).filter(ee.Filter.neq('mean', null))
-    .map(function(f) { 
-      return f.set('imageId', image.id());
-    });
-}).flatten();
-var table2 = format(tripletsNBR, 'Site_ID', 'imageId');
-var desc2 = 'Landsat_SR_NBR'; 
-Export.table.toDrive({
-  collection: table2, 
-  description: desc2, 
-  fileNamePrefix: desc2,
-  fileFormat: 'CSV'
-});
-
-
-// Part two
-// Load TerraClimate data
-var climate = ee.ImageCollection('IDAHO_EPSCOR/TERRACLIMATE').filter(ee.Filter.date('1980-01-01', '2020-03-31')); 
-// Clip imagery to ROI
-var climateClip = climate.map(function(image){return image.clip(GPS)});
-// Create variables
-var tmmn = climateClip.select('tmmn');
-var pr = climateClip.select('pr');
-var rad = climateClip.select('srad');
-// Export tmmn
-var tripletstmmn = tmmn.map(function(image) {
-  return image.reduceRegions({              
-    collection: GPS.select(['Site_ID']), 
-    reducer: ee.Reducer.mean(),
-    scale: 4000
-  }).filter(ee.Filter.neq('mean', null))
-    .map(function(f) { 
-      return f.set('imageId', image.id());
-    });
-}).flatten();
-var table3 = format(tripletstmmn, 'Site_ID', 'imageId');
-var desc3 = 'Terra_tmmn'; 
-Export.table.toDrive({
-  collection: table3, 
-  description: desc3, 
-  fileNamePrefix: desc3,
-  fileFormat: 'CSV'
-});
-// Export pr
-var tripletspr = pr.map(function(image) {
-  return image.reduceRegions({              
-    collection: GPS.select(['Site_ID']), 
-    reducer: ee.Reducer.mean(),
-    scale: 4000
-  }).filter(ee.Filter.neq('mean', null))
-    .map(function(f) { 
-      return f.set('imageId', image.id());
-    });
-}).flatten();
-var table4 = format(tripletspr, 'Site_ID', 'imageId');
-var desc4 = 'Terra_pr'; 
-Export.table.toDrive({
-  collection: table4, 
-  description: desc4, 
-  fileNamePrefix: desc4,
-  fileFormat: 'CSV'
-});
-// Export rad
-var tripletsrad = rad.map(function(image) {
-  return image.reduceRegions({              
-    collection: GPS.select(['Site_ID']), 
-    reducer: ee.Reducer.mean(),
-    scale: 4000
-  }).filter(ee.Filter.neq('mean', null))
-    .map(function(f) { 
-      return f.set('imageId', image.id());
-    });
-}).flatten();
-var table5 = format(tripletsrad, 'Site_ID', 'imageId');
-var desc5 = 'Terra_rad'; 
-Export.table.toDrive({
-  collection: table5, 
-  description: desc5, 
-  fileNamePrefix: desc5,
   fileFormat: 'CSV'
 });
