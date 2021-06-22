@@ -1077,7 +1077,8 @@ a<-ggplot(data=df,aes(x=NDVI_sdY19_20,y=Richness))+
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Lag",x=0.233,y=2.76,label.size=NA)
 b<-ggplot(data=df, aes(x =NDVI_sdY19_20, y = exShannon)) +
   geom_point() +
   geom_smooth(method="lm",colour="black")+
@@ -1087,7 +1088,8 @@ b<-ggplot(data=df, aes(x =NDVI_sdY19_20, y = exShannon)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Lag",x=0.233,y=2.57,label.size=NA)
 c<-ggplot(data=df, aes(x =NDVI_sdY17_20, y = exShannon)) +
   geom_point() +
   geom_smooth(method="lm",colour="black")+
@@ -1097,7 +1099,8 @@ c<-ggplot(data=df, aes(x =NDVI_sdY17_20, y = exShannon)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Lag",x=0.214,y=2.57,label.size=NA)
 d<-ggplot(data=df,aes(x=Grou_Cov,y=exShannon))+
   geom_point()+
   geom_smooth(method="lm",colour="black")+
@@ -1107,7 +1110,8 @@ d<-ggplot(data=df,aes(x=Grou_Cov,y=exShannon))+
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Local",x=28.8,y=2.49,label.size=NA)
 e<-ggplot(data=df,aes(x=AveVegHei,y=Richness))+
   geom_point()+
   geom_smooth(method="lm",colour="black")+
@@ -1117,7 +1121,8 @@ e<-ggplot(data=df,aes(x=AveVegHei,y=Richness))+
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Local",x=82,y=2.62,label.size=NA)
 ggarrange(a,b,c,d,e,ncol=3,nrow=2)
 
 #Figure 4
@@ -1131,7 +1136,8 @@ a<-ggplot(data=df, aes(x =PlanetScope_NDVI_50_2019_05, y = Richness)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Spectral",x=0.68,y=2.75,label.size=NA)
 b<-ggplot(data=df, aes(x =PlanetScope_NDVI_50_2020_01, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
@@ -1142,7 +1148,8 @@ b<-ggplot(data=df, aes(x =PlanetScope_NDVI_50_2020_01, y = Richness)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Spectral",x=0.825,y=2.75,label.size=NA)
 c<-ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
@@ -1152,7 +1159,8 @@ c<-ggplot(data=df, aes(x =Sentinel_NDVI_2019_05, y = Richness)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Spectral",x=0.696,y=0.42,label.size=NA)
 d<-ggplot(data=df, aes(x =Sentinel_NDVI_2020_01, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
@@ -1162,7 +1170,8 @@ d<-ggplot(data=df, aes(x =Sentinel_NDVI_2020_01, y = Richness)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Spectral",x=0.833,y=2.75,label.size=NA)
 e<-ggplot(data=df, aes(x =Sentinel_NDVI_2020_03, y = Richness)) +
   geom_point() +
   geom_smooth(colour="black")+
@@ -1172,7 +1181,8 @@ e<-ggplot(data=df, aes(x =Sentinel_NDVI_2020_03, y = Richness)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Spectral",x=0.84,y=2.75,label.size=NA)
 f<-ggplot(data=df, aes(x =Landsat_NDVI_2020_03, y = exShannon)) +
   geom_point() +
   geom_smooth(colour="black")+
@@ -1182,7 +1192,8 @@ f<-ggplot(data=df, aes(x =Landsat_NDVI_2020_03, y = exShannon)) +
         axis.ticks=element_line(size=0.8,colour="black"),
         axis.line=element_line(size=0.8,colour="black"),
         panel.grid=element_blank(),
-        panel.background=element_blank())
+        panel.background=element_blank())+
+  geom_label(label="Spectral",x=0.8495,y=2.57,label.size=NA)
 ggarrange(a,b,c,d,e,f,ncol=3,nrow=2)
 #Clean environment
 rm(a,b,c,d,e,f,df)
